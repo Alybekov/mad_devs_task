@@ -19,6 +19,12 @@ export class ApiError extends Error {
   }
 }
 
+let conflictSimulation = false
+
+export function setConflictSimulation(enabled: boolean) {
+  conflictSimulation = enabled
+}
+
 export async function getBookings(date: string): Promise<Booking[]> {
   await wait(LATENCY_MS)
   return readAll()
@@ -29,6 +35,7 @@ export async function getBookings(date: string): Promise<Booking[]> {
 export async function createBooking(draft: BookingDraft): Promise<Booking> {
   await wait(LATENCY_MS)
   const all = readAll()
+  simulateAnotherUser(draft, all)
   checkDraft(draft, all)
 
   const booking: Booking = { ...draft, id: crypto.randomUUID() }
@@ -42,6 +49,7 @@ export async function updateBooking(id: string, draft: BookingDraft): Promise<Bo
   if (!all.some((b) => b.id === id)) {
     throw new ApiError(404, 'Бронь не найдена — возможно, её уже удалили')
   }
+  simulateAnotherUser(draft, all, id)
   checkDraft(draft, all, id)
 
   const booking: Booking = { ...draft, id }
@@ -68,6 +76,19 @@ function checkDraft(draft: BookingDraft, all: Booking[], ignoreId?: string) {
 
   const conflict = findConflict(draft, all, ignoreId)
   if (conflict) throw new ApiError(409, conflictMessage(conflict))
+}
+
+function simulateAnotherUser(draft: BookingDraft, all: Booking[], ignoreId?: string) {
+  if (!conflictSimulation || findConflict(draft, all, ignoreId)) return
+
+  all.push({
+    id: crypto.randomUUID(),
+    date: draft.date,
+    start: draft.start,
+    end: draft.end,
+    title: 'Бронь другого сотрудника',
+  })
+  writeAll(all)
 }
 
 function readAll(): Booking[] {

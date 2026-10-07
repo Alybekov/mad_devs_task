@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { Alert, Box, Button, Container, Paper, Skeleton, Stack, Typography } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
-import { createBooking, deleteBooking, updateBooking } from './api/bookings'
+import { ApiError, createBooking, deleteBooking, updateBooking } from './api/bookings'
 import { BookingForm } from './components/BookingForm/BookingForm.tsx'
 import { BookingList } from './components/BookingList/BookingList.tsx'
 import { ConfirmDeleteDialog } from './components/ConfirmDeleteDialog/ConfirmDeleteDialog.tsx'
 import { DateSelector } from './components/DateSelector/DateSelector.tsx'
 import { DaySchedule } from './components/DaySchedule/DaySchedule.tsx'
+import { DevPanel } from './components/DevPanel/DevPanel.tsx'
 import { NoticeSnackbar } from './components/NoticeSnackbar/NoticeSnackbar.tsx'
 import { useBookings } from './hooks/useBookings'
 import { useNow } from './hooks/useNow'
@@ -92,7 +93,19 @@ function App() {
       setForm(null)
       reload()
     } catch (e) {
-      setFormError(getErrorMessage(e))
+      if (e instanceof ApiError && e.status === 409) {
+        setFormError(
+          `Пока вы заполняли форму, это время успели занять. ${e.message}. ` +
+            'Расписание обновлено — выберите другое время.',
+        )
+        reload()
+      } else if (e instanceof ApiError && e.status === 404) {
+        setFormError('Эту бронь уже удалили. Можно сохранить её как новую.')
+        setForm((prev) => prev && { ...prev, bookingId: null })
+        reload()
+      } else {
+        setFormError(getErrorMessage(e))
+      }
     } finally {
       setSaving(false)
     }
@@ -223,6 +236,8 @@ function App() {
           </Paper>
         </Stack>
       </Box>
+
+      <DevPanel />
 
       <ConfirmDeleteDialog
         booking={bookingToDelete}
