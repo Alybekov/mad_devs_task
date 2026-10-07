@@ -7,3 +7,12 @@ export type Booking = {
 }
 
 export type BookingDraft = Omit<Booking, 'id'>
+
+export type BookingFormValues = {
+  bookingId: string | null
+  title: string
+  start: string
+  end: string
+}
+
+export type Notice = { type: 'success' | 'error'; text: string }
