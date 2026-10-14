@@ -33,7 +33,8 @@ export function ConfirmDeleteDialog({ booking, onCancel, onConfirm }: Props) {
       )}
       <DialogActions>
         <Button onClick={onCancel}>Отмена</Button>
-        <Button color="error" variant="contained" onClick={() => shown && onConfirm(shown)}>
+        {/* booking, а не shown: во время анимации закрытия повторный клик ничего не делает */}
+        <Button color="error" variant="contained" onClick={() => booking && onConfirm(booking)}>
           Удалить
         </Button>
       </DialogActions>
