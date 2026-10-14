@@ -7,7 +7,8 @@ import {
 } from '../utils/validation'
 
 const STORAGE_KEY = 'meeting-room-bookings'
-const LATENCY_MS = 400
+// В тестах задержка не нужна — она только замедляет прогон
+const LATENCY_MS = import.meta.env.MODE === 'test' ? 0 : 400
 
 export class ApiError extends Error {
   status: number
